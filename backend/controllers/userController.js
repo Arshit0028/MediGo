@@ -1,19 +1,19 @@
 import jwt from "jsonwebtoken";
+import 'dotenv/config';
 import bcrypt from "bcrypt";
 import validator from "validator";
 import userModel from "../models/userModel.js";
 import doctorModel from "../models/doctorModel.js";
 import appointmentModel from "../models/appointmentModel.js";
 import { v2 as cloudinary } from 'cloudinary'
-import stripe from "stripe";
-import razorpay from 'razorpay';
+import Razorpay from 'razorpay'; // ✅ Correct
+
 
 // Gateway Initialize
-const stripeInstance = new stripe(process.env.STRIPE_SECRET_KEY)
-const razorpayInstance = new razorpay({
-    key_id: process.env.RAZORPAY_KEY_ID,
-    key_secret: process.env.RAZORPAY_KEY_SECRET,
-})
+const razorpayInstance = new Razorpay({
+  key_id: process.env.RAZORPAY_KEY_ID,
+  key_secret: process.env.RAZORPAY_KEY_SECRET,
+});
 
 // API to register user
 const registerUser = async (req, res) => {
