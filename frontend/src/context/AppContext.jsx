@@ -1,0 +1,112 @@
+import { createContext, useEffect, useState } from "react";
+import { toast } from "react-toastify";
+import axios from "axios";
+import { useNavigate } from "react-router-dom";
+
+export const AppContext = createContext();
+
+const AppContextProvider = ({ children }) => {
+  const navigate = useNavigate();
+  const currencySymbol = "₹";
+  const backendUrl = import.meta.env.VITE_BACKEND_URL || "http://localhost:5000";
+
+  const [doctors, setDoctors] = useState([]);
+  const [token, setToken] = useState(localStorage.getItem("token") || "");
+  const [userData, setUserData] = useState(null);
+
+  // Fetch doctors
+  const getDoctorsData = async () => {
+    try {
+      const { data } = await axios.get(`${backendUrl}/api/doctor/list`);
+      if (data.success) setDoctors(data.doctors);
+      else toast.error(data.message || "Failed to fetch doctors");
+    } catch (error) {
+      console.error(error);
+      toast.error(error.response?.data?.message || "Error fetching doctors");
+    }
+  };
+
+  // Fetch user profile
+  const getProfile = async (authToken) => {
+    if (!authToken) return setUserData(null);
+    try {
+      const { data } = await axios.get(`${backendUrl}/api/user/profile`, {
+        headers: { Authorization: `Bearer ${authToken}` },
+      });
+      if (data.success) setUserData(data.user);
+      else setUserData(null);
+    } catch (error) {
+      console.error("Profile fetch error:", error);
+      setUserData(null);
+    }
+  };
+
+  // Handle login/register token
+  const handleAuth = (userToken) => {
+    if (!userToken) return console.error("❌ No token provided");
+    setToken(userToken);
+    localStorage.setItem("token", userToken);
+    getProfile(userToken);
+    toast.success("Logged in successfully");
+  };
+
+  // Logout
+  const logout = () => {
+    setToken("");
+    setUserData(null);
+    localStorage.removeItem("token");
+    toast.success("Logged out successfully");
+    navigate("/login");
+  };
+
+  // Register
+  const registerUser = async (formData) => {
+    try {
+      const { data } = await axios.post(`${backendUrl}/api/user/register`, formData);
+      if (data.success) handleAuth(data.token);
+      else toast.error(data.message || "Registration failed");
+    } catch (error) {
+      console.error(error);
+      toast.error(error.response?.data?.message || "Registration error");
+    }
+  };
+
+  // Login
+  const loginUser = async (formData) => {
+    try {
+      const { data } = await axios.post(`${backendUrl}/api/user/login`, formData);
+      if (data.success) handleAuth(data.token);
+      else toast.error(data.message || "Login failed");
+    } catch (error) {
+      console.error(error);
+      toast.error(error.response?.data?.message || "Login error");
+    }
+  };
+
+  useEffect(() => {
+    getDoctorsData();
+    if (token) getProfile(token);
+  }, [token]);
+
+  return (
+    <AppContext.Provider
+      value={{
+        currencySymbol,
+        backendUrl,
+        doctors,
+        token,
+        userData,
+        setUserData,
+        setToken: handleAuth,
+        logout,
+        getDoctorsData,
+        registerUser,
+        loginUser,
+      }}
+    >
+      {children}
+    </AppContext.Provider>
+  );
+};
+
+export default AppContextProvider;
