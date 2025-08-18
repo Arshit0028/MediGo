@@ -1,29 +1,34 @@
-// controllers/userController.js
 import jwt from "jsonwebtoken";
 import bcrypt from "bcryptjs";
 import dotenv from "dotenv";
 import Razorpay from "razorpay";
 import Stripe from "stripe";
+
 import userModel from "../models/userModel.js";
 import doctorModel from "../models/doctorModel.js";
 import appointmentModel from "../models/appointmentModel.js";
 
 dotenv.config();
 
-// ----- Helper: Generate JWT -----
-const generateToken = (id) => {
-  return jwt.sign({ id }, process.env.JWT_SECRET, { expiresIn: "30d" });
-};
+// ================== Helpers ==================
+const generateToken = (id) => jwt.sign({ id }, process.env.JWT_SECRET, { expiresIn: "30d" });
 
-// ----- Auth Controllers -----
+// ================== Auth Controllers ==================
 export const registerUser = async (req, res) => {
   try {
     const { name, email, password } = req.body;
+
+    if (!name || !email || !password) {
+      return res.status(400).json({ success: false, message: "All fields are required" });
+    }
+
+    // Check if user exists
     const exists = await userModel.findOne({ email });
     if (exists) {
       return res.status(400).json({ success: false, message: "User already exists" });
     }
 
+    // Hash password & create user
     const hashedPassword = await bcrypt.hash(password, 10);
     const user = await userModel.create({ name, email, password: hashedPassword });
 
@@ -42,9 +47,16 @@ export const registerUser = async (req, res) => {
 export const loginUser = async (req, res) => {
   try {
     const { email, password } = req.body;
+
+    if (!email || !password) {
+      return res.status(400).json({ success: false, message: "Email & password required" });
+    }
+
+    // Validate user
     const user = await userModel.findOne({ email });
     if (!user) return res.status(400).json({ success: false, message: "Invalid credentials" });
 
+    // Compare password
     const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) return res.status(400).json({ success: false, message: "Invalid credentials" });
 
@@ -60,37 +72,39 @@ export const loginUser = async (req, res) => {
   }
 };
 
-const getProfile = async (req, res) => {
+export const getProfile = async (req, res) => {
   try {
-    // Use User, not userModel
-    const user = await User.findById(req.user._id).select("-password");
-    if (!user) {
-      return res.status(404).json({ success: false, message: "User not found" });
+    if (!req.user) {
+      return res.status(401).json({ success: false, message: "Unauthorized" });
     }
-
+    const user = await userModel.findById(req.user.id).select("-password");
     res.json({ success: true, user });
   } catch (err) {
     console.error("Profile error:", err.message);
-    res.status(500).json({ success: false, message: "Server error" });
+    res.status(500).json({ success: false, message: "Server error fetching profile" });
   }
 };
 
-export const logoutUser = async (_, res) => {
-  res.json({ success: true, message: "Logged out" });
+export const logoutUser = async (req, res) => {
+  try {
+    res.json({ success: true, message: "Logged out successfully" });
+  } catch (err) {
+    res.status(500).json({ success: false, message: "Logout failed" });
+  }
 };
 
-// ----- Booking Controllers -----
+// ================== Appointment Controllers ==================
 export const bookAppointment = async (req, res) => {
   try {
     const { docId, slotDate, slotTime } = req.body;
-    const docData = await doctorModel.findById(docId).select("-password");
+    const doctor = await doctorModel.findById(docId).select("-password");
 
-    if (!docData?.available) {
+    if (!doctor?.available) {
       return res.json({ success: false, message: "Doctor not available" });
     }
 
     const appointment = await appointmentModel.create({
-      userId: req.user._id,
+      userId: req.user.id,
       docId,
       slotDate,
       slotTime,
@@ -107,7 +121,7 @@ export const bookAppointment = async (req, res) => {
 export const getUserAppointments = async (req, res) => {
   try {
     const appointments = await appointmentModel
-      .find({ userId: req.user._id })
+      .find({ userId: req.user.id })
       .populate("docId", "name specialization");
 
     res.json({ success: true, data: appointments });
@@ -125,7 +139,7 @@ export const cancelAppointment = async (req, res) => {
     }
 
     const updated = await appointmentModel.findOneAndUpdate(
-      { _id: appointmentId, userId: req.user._id },
+      { _id: appointmentId, userId: req.user.id },
       { status: "Cancelled" },
       { new: true }
     );
@@ -141,7 +155,7 @@ export const cancelAppointment = async (req, res) => {
   }
 };
 
-// ----- Payments: Razorpay -----
+// ================== Payments: Razorpay ==================
 export const paymentRazorpay = async (req, res) => {
   try {
     const razorpay = new Razorpay({
@@ -150,7 +164,7 @@ export const paymentRazorpay = async (req, res) => {
     });
 
     const options = {
-      amount: req.body.amount * 100, // paise
+      amount: req.body.amount * 100, // Convert to paise
       currency: "INR",
       receipt: `receipt_${Date.now()}`,
     };
@@ -165,7 +179,7 @@ export const paymentRazorpay = async (req, res) => {
 
 export const verifyRazorpay = async (req, res) => {
   try {
-    // Implement Razorpay signature verification if needed
+    // TODO: Add Razorpay signature verification here
     res.json({ success: true, message: "Payment verified" });
   } catch (err) {
     console.error("Verify Razorpay error:", err);
@@ -173,7 +187,7 @@ export const verifyRazorpay = async (req, res) => {
   }
 };
 
-// ----- Payments: Stripe -----
+// ================== Payments: Stripe ==================
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 
 export const paymentStripe = async (req, res) => {

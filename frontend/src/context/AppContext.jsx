@@ -1,3 +1,4 @@
+// src/context/AppContext.jsx
 import { createContext, useEffect, useState } from "react";
 import { toast } from "react-toastify";
 import axios from "axios";
@@ -14,43 +15,65 @@ const AppContextProvider = ({ children }) => {
   const [token, setToken] = useState(localStorage.getItem("token") || "");
   const [userData, setUserData] = useState(null);
 
-  // Fetch doctors
+  // -----------------------------
+  // Fetch doctors list
+  // -----------------------------
   const getDoctorsData = async () => {
     try {
       const { data } = await axios.get(`${backendUrl}/api/doctor/list`);
-      if (data.success) setDoctors(data.doctors);
-      else toast.error(data.message || "Failed to fetch doctors");
-    } catch (error) {
-      console.error(error);
-      toast.error(error.response?.data?.message || "Error fetching doctors");
+      if (data.success) {
+        setDoctors(data.doctors || []);
+      } else {
+        toast.error(data.message || "Failed to fetch doctors");
+      }
+    } catch (err) {
+      console.error("❌ Doctor fetch error:", err);
+      toast.error(err.response?.data?.message || "Error fetching doctors");
     }
   };
 
-  // Fetch user profile
+  // -----------------------------
+  // Fetch logged-in user profile
+  // -----------------------------
   const getProfile = async (authToken) => {
     if (!authToken) return setUserData(null);
     try {
       const { data } = await axios.get(`${backendUrl}/api/user/profile`, {
         headers: { Authorization: `Bearer ${authToken}` },
       });
-      if (data.success) setUserData(data.user);
-      else setUserData(null);
+
+      if (data.success) {
+        setUserData(data.user);
+      } else {
+        setUserData(null);
+      }
     } catch (error) {
-      console.error("Profile fetch error:", error);
-      setUserData(null);
+      console.error("❌ Profile fetch error:", error);
+      // Auto logout if unauthorized
+      if (error.response?.status === 401) {
+        logout();
+      } else {
+        setUserData(null);
+      }
     }
   };
 
-  // Handle login/register token
+  // -----------------------------
+  // Handle Auth (Login/Register)
+  // -----------------------------
   const handleAuth = (userToken) => {
-    if (!userToken) return console.error("❌ No token provided");
+    if (!userToken) {
+      console.error("❌ No token provided");
+      return;
+    }
     setToken(userToken);
     localStorage.setItem("token", userToken);
     getProfile(userToken);
-    toast.success("Logged in successfully");
   };
 
+  // -----------------------------
   // Logout
+  // -----------------------------
   const logout = () => {
     setToken("");
     setUserData(null);
@@ -59,33 +82,52 @@ const AppContextProvider = ({ children }) => {
     navigate("/login");
   };
 
+  // -----------------------------
   // Register
+  // -----------------------------
   const registerUser = async (formData) => {
     try {
       const { data } = await axios.post(`${backendUrl}/api/user/register`, formData);
-      if (data.success) handleAuth(data.token);
-      else toast.error(data.message || "Registration failed");
-    } catch (error) {
-      console.error(error);
-      toast.error(error.response?.data?.message || "Registration error");
+      if (data.success && data.token) {
+        handleAuth(data.token);
+        toast.success("Account created successfully");
+        navigate("/");
+      } else {
+        toast.error(data.message || "Registration failed");
+      }
+    } catch (err) {
+      console.error("❌ Register error:", err);
+      toast.error(err.response?.data?.message || "Registration error");
     }
   };
 
+  // -----------------------------
   // Login
+  // -----------------------------
   const loginUser = async (formData) => {
     try {
       const { data } = await axios.post(`${backendUrl}/api/user/login`, formData);
-      if (data.success) handleAuth(data.token);
-      else toast.error(data.message || "Login failed");
-    } catch (error) {
-      console.error(error);
-      toast.error(error.response?.data?.message || "Login error");
+      if (data.success && data.token) {
+        handleAuth(data.token);
+        toast.success("Logged in successfully");
+        navigate("/");
+      } else {
+        toast.error(data.message || "Login failed");
+      }
+    } catch (err) {
+      console.error("❌ Login error:", err);
+      toast.error(err.response?.data?.message || "Login error");
     }
   };
 
+  // -----------------------------
+  // Init - fetch doctors & profile
+  // -----------------------------
   useEffect(() => {
     getDoctorsData();
-    if (token) getProfile(token);
+    if (token) {
+      getProfile(token);
+    }
   }, [token]);
 
   return (
