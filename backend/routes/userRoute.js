@@ -11,6 +11,8 @@ import {
   verifyRazorpay,
   paymentStripe,
   stripeSuccess,
+  updateProfile, 
+  uploadProfileImage,
 } from "../controllers/userController.js";
 import { authUser } from "../middleware/authUser.js";
 
@@ -19,8 +21,10 @@ const router = express.Router();
 // Auth
 router.post("/register", registerUser);
 router.post("/login", loginUser);
-router.get("/profile", authUser, getProfile);
 router.post("/logout", authUser, logoutUser);
+
+router.get("/profile", authUser, getProfile);
+router.put("/profile", authUser, uploadProfileImage.single("image"), updateProfile);
 
 // Booking
 router.post("/book-appointment", authUser, bookAppointment);

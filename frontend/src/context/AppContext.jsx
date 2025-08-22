@@ -13,14 +13,26 @@ const AppContextProvider = ({ children }) => {
 
   const [doctors, setDoctors] = useState([]);
   const [token, setToken] = useState(localStorage.getItem("token") || "");
-  const [userData, setUserData] = useState(null);
+  const [userData, setUserData] = useState(() => {
+    const storedUser = localStorage.getItem("userData");
+    return storedUser ? JSON.parse(storedUser) : null;
+  });
+
+  // Persist userData to localStorage whenever it updates
+  useEffect(() => {
+    if (userData) {
+      localStorage.setItem("userData", JSON.stringify(userData));
+    } else {
+      localStorage.removeItem("userData");
+    }
+  }, [userData]);
 
   // -----------------------------
   // Fetch doctors list
   // -----------------------------
   const getDoctorsData = async () => {
     try {
-      const { data } = await axios.get(`${backendUrl}/api/doctor/list`);
+      const { data } = await axios.get(`${backendUrl}/api/doctor`);
       if (data.success) {
         setDoctors(data.doctors || []);
       } else {
@@ -49,7 +61,6 @@ const AppContextProvider = ({ children }) => {
       }
     } catch (error) {
       console.error("❌ Profile fetch error:", error);
-      // Auto logout if unauthorized
       if (error.response?.status === 401) {
         logout();
       } else {
@@ -62,10 +73,7 @@ const AppContextProvider = ({ children }) => {
   // Handle Auth (Login/Register)
   // -----------------------------
   const handleAuth = (userToken) => {
-    if (!userToken) {
-      console.error("❌ No token provided");
-      return;
-    }
+    if (!userToken) return console.error("❌ No token provided");
     setToken(userToken);
     localStorage.setItem("token", userToken);
     getProfile(userToken);
@@ -121,13 +129,11 @@ const AppContextProvider = ({ children }) => {
   };
 
   // -----------------------------
-  // Init - fetch doctors & profile
+  // Init - fetch doctors & profile on load
   // -----------------------------
   useEffect(() => {
     getDoctorsData();
-    if (token) {
-      getProfile(token);
-    }
+    if (token) getProfile(token);
   }, [token]);
 
   return (

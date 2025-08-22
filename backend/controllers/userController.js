@@ -3,6 +3,9 @@ import bcrypt from "bcryptjs";
 import dotenv from "dotenv";
 import Razorpay from "razorpay";
 import Stripe from "stripe";
+import multer from "multer";
+import path from "path";
+import fs from "fs";
 
 import userModel from "../models/userModel.js";
 import doctorModel from "../models/doctorModel.js";
@@ -85,6 +88,53 @@ export const getProfile = async (req, res) => {
   }
 };
 
+
+// ================== Multer Setup for Profile Image ==================
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    const uploadPath = path.join(process.cwd(), "uploads/profile");
+    fs.mkdirSync(uploadPath, { recursive: true });
+    cb(null, uploadPath);
+  },
+  filename: (req, file, cb) => cb(null, `${Date.now()}-${file.originalname}`),
+});
+export const uploadProfileImage = multer({ storage });
+
+// ================== Profile Update Controller ==================
+export const updateProfile = async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const user = await userModel.findById(userId);
+    if (!user) return res.status(404).json({ success: false, message: "User not found" });
+
+    const { name, phone, address, gender, dob } = req.body;
+
+    if (name) user.name = name;
+    if (phone) user.phone = phone;
+    if (address) user.address = JSON.parse(address); // because frontend sends JSON string
+    if (gender) user.gender = gender;
+    if (dob) user.dob = dob;
+
+    if (req.file) {
+      // delete old image if exists
+      if (user.image) {
+        const oldImagePath = path.join(process.cwd(), user.image);
+        if (fs.existsSync(oldImagePath)) fs.unlinkSync(oldImagePath);
+      }
+      user.image = `/uploads/profile/${req.file.filename}`; // save relative path
+    }
+
+    await user.save();
+
+    res.json({ success: true, message: "Profile updated successfully", user });
+  } catch (err) {
+    console.error("Update profile error:", err);
+    res.status(500).json({ success: false, message: "Server error updating profile" });
+  }
+};
+
+
+
 export const logoutUser = async (req, res) => {
   try {
     res.json({ success: true, message: "Logged out successfully" });
@@ -92,6 +142,10 @@ export const logoutUser = async (req, res) => {
     res.status(500).json({ success: false, message: "Logout failed" });
   }
 };
+
+
+
+
 
 // ================== Appointment Controllers ==================
 export const bookAppointment = async (req, res) => {

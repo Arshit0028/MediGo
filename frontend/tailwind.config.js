@@ -16,3 +16,17 @@ export default {
   },
   plugins: [],
 }
+
+module.exports = {
+  content: [
+    "./src/**/*.{js,jsx,ts,tsx}",
+  ],
+  theme: {
+    extend: {
+      fontFamily: {
+        'serif-display': ['"Playfair Display"', 'serif'], // Add this line
+      },
+    },
+  },
+  plugins: [],
+}

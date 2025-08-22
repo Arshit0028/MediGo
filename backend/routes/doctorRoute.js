@@ -1,9 +1,10 @@
-// src/routes/doctorRoutes.js
 import express from "express";
-import { listDoctors } from "../controllers/doctorController.js";
+import { getAllDoctors , getDoctorById } from "../controllers/doctorController.js";
 
 const router = express.Router();
 
-router.get("/list", listDoctors);
+// GET all doctors
+router.get("/", getAllDoctors);
+router.get("/:id", getDoctorById);   // new route ✅
 
 export default router;

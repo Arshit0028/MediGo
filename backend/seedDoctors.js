@@ -1,34 +1,32 @@
+// seedDoctors.js
 import mongoose from "mongoose";
-import doctorModel from "./models/doctorModel.js"; // adjust path if needed
 import dotenv from "dotenv";
-dotenv.config();
+import doctorModel from "./models/doctorModel.js"; // adjust path if needed
+import { doctors } from "./data/doctors.js"; // your static doctors array
 
-const MONGO_URL = process.env.MONGO_URL || "mongodb://localhost:27017/your-db-name";
+dotenv.config();
 
 const seedDoctors = async () => {
   try {
-    await mongoose.connect(MONGO_URL);
-    console.log("MongoDB connected");
+    // connect to MongoDB Atlas
+    await mongoose.connect(process.env.MONGO_URI);
 
-    const doctors = [];
+    // clear old doctors
+    await doctorModel.deleteMany();
 
-    for (let i = 1; i <= 15; i++) {
-      doctors.push({
-        name: `Doctor ${i}`,
-        email: `doctor${i}@mail.com`,
-        phone: `900000000${i}`,
-        specialization: "General",
-        available: true,
-        fees: 500,
-        docCode: `doc${i}`
-      });
-    }
+    // remove _id and add unique emails
+    const cleanedDoctors = doctors.map(({ _id, ...rest }, index) => ({
+      ...rest,
+      email: `doctor${index + 1}@medigo.com` // ✅ unique email
+    }));
 
-    await doctorModel.insertMany(doctors);
-    console.log("Doctors seeded");
+    // insert data
+    await doctorModel.insertMany(cleanedDoctors);
+
+    console.log("✅ Doctors seeded successfully!");
     process.exit();
-  } catch (err) {
-    console.error("Seeding error:", err.message);
+  } catch (error) {
+    console.error("❌ Error seeding doctors:", error);
     process.exit(1);
   }
 };
