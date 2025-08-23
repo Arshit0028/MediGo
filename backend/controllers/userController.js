@@ -7,6 +7,8 @@ import Stripe from "stripe";
 import multer from "multer";
 import path from "path";
 import fs from "fs";
+import Razorpay from "razorpay";
+import crypto from "crypto";
 
 import userModel from "../models/userModel.js";
 import doctorModel from "../models/doctorModel.js";
@@ -265,6 +267,7 @@ export const cancelAppointment = async (req, res) => {
 };
 
 // ================== Payments: Razorpay ==================
+
 export const paymentRazorpay = async (req, res) => {
   try {
     const razorpay = new Razorpay({
@@ -273,7 +276,7 @@ export const paymentRazorpay = async (req, res) => {
     });
 
     const options = {
-      amount: req.body.amount * 100, // Convert to paise
+      amount: req.body.amount * 100, // INR → paise
       currency: "INR",
       receipt: `receipt_${Date.now()}`,
     };
@@ -288,8 +291,31 @@ export const paymentRazorpay = async (req, res) => {
 
 export const verifyRazorpay = async (req, res) => {
   try {
-    // TODO: Add Razorpay signature verification here
-    res.json({ success: true, message: "Payment verified" });
+    const {
+      appointmentId,
+      razorpay_order_id,
+      razorpay_payment_id,
+      razorpay_signature,
+    } = req.body;
+
+    const body = razorpay_order_id + "|" + razorpay_payment_id;
+
+    const expectedSignature = crypto
+      .createHmac("sha256", process.env.RAZORPAY_KEY_SECRET)
+      .update(body.toString())
+      .digest("hex");
+
+    if (expectedSignature === razorpay_signature) {
+      // ✅ Update appointment payment
+      await Appointment.findByIdAndUpdate(appointmentId, {
+        paymentStatus: "Paid",
+        transactionId: razorpay_payment_id,
+      });
+
+      return res.json({ success: true, message: "Payment verified" });
+    } else {
+      return res.status(400).json({ success: false, message: "Invalid signature" });
+    }
   } catch (err) {
     console.error("Verify Razorpay error:", err);
     res.status(500).json({ success: false, message: "Verification failed" });

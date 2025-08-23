@@ -32,8 +32,8 @@ router.get("/appointments", authUser, getUserAppointments);
 router.post("/cancel-appointment", authUser, cancelAppointment);
 
 // Payments
-router.post("/payment-razorpay", authUser, paymentRazorpay);
-router.post("/verify-razorpay", authUser, verifyRazorpay);
+router.post("/razorpay", authUser, paymentRazorpay);
+router.post("/verify", authUser, verifyRazorpay);
 router.post("/payment-stripe", authUser, paymentStripe);
 router.get("/stripe/success", stripeSuccess);
 

@@ -26,7 +26,6 @@ const MyAppointments = () => {
       setAppointments(res.data.data || []);
     } catch (err) {
       console.error("❌ Fetch appointments error:", err.response?.data || err.message);
-
       if (err.response?.status === 401) {
         localStorage.removeItem("token");
         navigate("/login");
@@ -36,7 +35,8 @@ const MyAppointments = () => {
     }
   };
 
-  const handlePayment = async (apptId) => {
+  // ✅ Razorpay Payment
+  const handlePayment = async (amount, apptId) => {
     try {
       const token = localStorage.getItem("token");
       if (!token) {
@@ -44,20 +44,59 @@ const MyAppointments = () => {
         return;
       }
 
-      // 👉 call your payment backend API
-      const res = await axios.post(
-        "http://localhost:5000/api/payment/checkout",
-        { appointmentId: apptId }, // send appointmentId for backend
+      // 1. Create Razorpay order from backend
+      const { data } = await axios.post(
+        "http://localhost:5000/api/payment/razorpay",
+        { amount },
         { headers: { Authorization: `Bearer ${token}` } }
       );
 
-      console.log("✅ Payment initiated:", res.data);
+      if (!data.success) {
+        alert("Payment initiation failed");
+        return;
+      }
 
-      // Example: if using Razorpay/Stripe you’d redirect or open checkout here
-      alert("Redirecting to payment gateway...");
+      const { order } = data;
 
+      // 2. Open Razorpay checkout
+      const options = {
+        key: import.meta.env.VITE_RAZORPAY_KEY_ID, // add in .env
+        amount: order.amount,
+        currency: "INR",
+        name: "MediGo - Appointment Payment",
+        description: "Doctor Appointment Payment",
+        order_id: order.id,
+        handler: async function (response) {
+          try {
+            // 3. Verify payment on backend
+            await axios.post(
+              "http://localhost:5000/api/payment/verify",
+              {
+                razorpay_payment_id: response.razorpay_payment_id,
+                razorpay_order_id: response.razorpay_order_id,
+                razorpay_signature: response.razorpay_signature,
+                appointmentId: apptId,
+              },
+              { headers: { Authorization: `Bearer ${token}` } }
+            );
+
+            alert("✅ Payment Successful!");
+            getUserAppointments(); // refresh appointments
+          } catch (error) {
+            console.error("Payment verification failed:", error);
+            alert("❌ Payment verification failed");
+          }
+        },
+        theme: {
+          color: "#1D4ED8",
+        },
+      };
+
+      const rzp = new window.Razorpay(options);
+      rzp.open();
     } catch (err) {
-      console.error("❌ Payment error:", err.response?.data || err.message);
+      console.error("Payment error:", err);
+      alert("Payment failed");
     }
   };
 
@@ -81,54 +120,43 @@ const MyAppointments = () => {
           {appointments.map((appt) => (
             <li
               key={appt._id}
-              className="p-4 border rounded-lg bg-gray-50 shadow-sm flex items-center space-x-4"
+              className="p-4 border rounded-lg bg-gray-50 shadow-sm"
             >
-              {/* Doctor image */}
-              {appt.docId?.image && (
-                <img
-                  src={appt.docId.image}
-                  alt={appt.docId.name}
-                  className="w-16 h-16 rounded-full object-cover border"
-                />
-              )}
+              <p className="font-semibold text-lg">
+                Doctor: {appt.docId?.name || "Unknown"}{" "}
+                <span className="text-sm text-gray-500">
+                  ({appt.docId?.speciality})
+                </span>
+              </p>
+              <p>
+                Date:{" "}
+                <span className="font-medium">
+                  {new Date(appt.slotDate).toLocaleDateString()}
+                </span>
+              </p>
+              <p>
+                Time: <span className="font-medium">{appt.slotTime}</span>
+              </p>
+              <p>
+                Status:{" "}
+                <span
+                  className={`px-2 py-1 rounded text-white ${
+                    appt.status === "Pending"
+                      ? "bg-yellow-500"
+                      : appt.status === "Confirmed"
+                      ? "bg-green-600"
+                      : "bg-gray-500"
+                  }`}
+                >
+                  {appt.status}
+                </span>
+              </p>
 
-              {/* Appointment Info */}
-              <div className="flex-1">
-                <p>
-                  <span className="font-medium">Doctor:</span>{" "}
-                  {appt.docId?.name || "Unknown"}
-                </p>
-                <p>
-                  <span className="font-medium">Speciality:</span>{" "}
-                  {appt.docId?.speciality || "N/A"}
-                </p>
-                <p>
-                  <span className="font-medium">Date:</span> {appt.slotDate}
-                </p>
-                <p>
-                  <span className="font-medium">Time:</span> {appt.slotTime}
-                </p>
-                <p>
-                  <span className="font-medium">Status:</span>{" "}
-                  <span
-                    className={`px-2 py-1 rounded text-sm ${
-                      appt.status === "Pending"
-                        ? "bg-yellow-100 text-yellow-800"
-                        : appt.status === "Confirmed"
-                        ? "bg-green-100 text-green-800"
-                        : "bg-red-100 text-red-800"
-                    }`}
-                  >
-                    {appt.status}
-                  </span>
-                </p>
-              </div>
-
-              {/* ✅ Payment Button */}
+              {/* ✅ Pay Now Button */}
               {appt.status === "Pending" && (
                 <button
-                  onClick={() => handlePayment(appt._id)}
-                  className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition"
+                  onClick={() => handlePayment(500, appt._id)} // Example ₹500
+                  className="mt-3 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition"
                 >
                   Pay Now
                 </button>

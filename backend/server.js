@@ -4,6 +4,7 @@ import mongoose from "mongoose";
 import cors from "cors";
 import userRoutes from "./routes/userRoute.js"; // ✅ fixed filename
 import doctorRoutes from "./routes/doctorRoute.js"; // ✅ fixed filename
+import paymentRoutes from "./routes/userRoute.js"; // ✅ fixed filename
 
 dotenv.config();
 const app = express();
@@ -15,6 +16,7 @@ app.use(express.json());
 // routes
 app.use("/api/user", userRoutes);
 app.use("/api/doctor", doctorRoutes);
+app.use("/api/payment", paymentRoutes);
 
 // test route
 app.get("/", (req, res) => {
