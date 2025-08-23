@@ -7,7 +7,6 @@ import Stripe from "stripe";
 import multer from "multer";
 import path from "path";
 import fs from "fs";
-import Razorpay from "razorpay";
 import crypto from "crypto";
 
 import userModel from "../models/userModel.js";
@@ -174,7 +173,7 @@ export const logoutUser = async (req, res) => {
 export const bookAppointment = async (req, res) => {
   try {
     const { docId, slotDate, slotTime } = req.body;
-    const userId = req.userId; // ✅ use correct field from auth middleware
+    const userId = req.userId; // ✅ 
 
     // Check doctor exists
     const doctor = await doctorModel.findById(docId);
