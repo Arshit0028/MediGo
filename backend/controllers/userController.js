@@ -1,3 +1,4 @@
+// controllers/authUser.js
 import jwt from "jsonwebtoken";
 import bcrypt from "bcryptjs";
 import dotenv from "dotenv";
@@ -14,7 +15,8 @@ import appointmentModel from "../models/appointmentModel.js";
 dotenv.config();
 
 // ================== Helpers ==================
-const generateToken = (id) => jwt.sign({ id }, process.env.JWT_SECRET, { expiresIn: "30d" });
+const generateToken = (id) =>
+  jwt.sign({ id }, process.env.JWT_SECRET, { expiresIn: "30d" });
 
 // ================== Auth Controllers ==================
 export const registerUser = async (req, res) => {
@@ -22,18 +24,26 @@ export const registerUser = async (req, res) => {
     const { name, email, password } = req.body;
 
     if (!name || !email || !password) {
-      return res.status(400).json({ success: false, message: "All fields are required" });
+      return res
+        .status(400)
+        .json({ success: false, message: "All fields are required" });
     }
 
     // Check if user exists
     const exists = await userModel.findOne({ email });
     if (exists) {
-      return res.status(400).json({ success: false, message: "User already exists" });
+      return res
+        .status(400)
+        .json({ success: false, message: "User already exists" });
     }
 
     // Hash password & create user
     const hashedPassword = await bcrypt.hash(password, 10);
-    const user = await userModel.create({ name, email, password: hashedPassword });
+    const user = await userModel.create({
+      name,
+      email,
+      password: hashedPassword,
+    });
 
     res.json({
       success: true,
@@ -52,16 +62,24 @@ export const loginUser = async (req, res) => {
     const { email, password } = req.body;
 
     if (!email || !password) {
-      return res.status(400).json({ success: false, message: "Email & password required" });
+      return res
+        .status(400)
+        .json({ success: false, message: "Email & password required" });
     }
 
     // Validate user
     const user = await userModel.findOne({ email });
-    if (!user) return res.status(400).json({ success: false, message: "Invalid credentials" });
+    if (!user)
+      return res
+        .status(400)
+        .json({ success: false, message: "Invalid credentials" });
 
     // Compare password
     const isMatch = await bcrypt.compare(password, user.password);
-    if (!isMatch) return res.status(400).json({ success: false, message: "Invalid credentials" });
+    if (!isMatch)
+      return res
+        .status(400)
+        .json({ success: false, message: "Invalid credentials" });
 
     res.json({
       success: true,
@@ -84,10 +102,11 @@ export const getProfile = async (req, res) => {
     res.json({ success: true, user });
   } catch (err) {
     console.error("Profile error:", err.message);
-    res.status(500).json({ success: false, message: "Server error fetching profile" });
+    res
+      .status(500)
+      .json({ success: false, message: "Server error fetching profile" });
   }
 };
-
 
 // ================== Multer Setup for Profile Image ==================
 const storage = multer.diskStorage({
@@ -105,13 +124,14 @@ export const updateProfile = async (req, res) => {
   try {
     const userId = req.user.id;
     const user = await userModel.findById(userId);
-    if (!user) return res.status(404).json({ success: false, message: "User not found" });
+    if (!user)
+      return res.status(404).json({ success: false, message: "User not found" });
 
     const { name, phone, address, gender, dob } = req.body;
 
     if (name) user.name = name;
     if (phone) user.phone = phone;
-    if (address) user.address = JSON.parse(address); // because frontend sends JSON string
+    if (address) user.address = JSON.parse(address); // frontend sends JSON string
     if (gender) user.gender = gender;
     if (dob) user.dob = dob;
 
@@ -126,14 +146,18 @@ export const updateProfile = async (req, res) => {
 
     await user.save();
 
-    res.json({ success: true, message: "Profile updated successfully", user });
+    res.json({
+      success: true,
+      message: "Profile updated successfully",
+      user,
+    });
   } catch (err) {
     console.error("Update profile error:", err);
-    res.status(500).json({ success: false, message: "Server error updating profile" });
+    res
+      .status(500)
+      .json({ success: false, message: "Server error updating profile" });
   }
 };
-
-
 
 export const logoutUser = async (req, res) => {
   try {
@@ -143,55 +167,72 @@ export const logoutUser = async (req, res) => {
   }
 };
 
-
-
-
-
-// ================== Appointment Controllers ==================
+// ================== Appointment Controllers =================
+// Book appointment
 export const bookAppointment = async (req, res) => {
   try {
     const { docId, slotDate, slotTime } = req.body;
-    const doctor = await doctorModel.findById(docId).select("-password");
+    const userId = req.userId; // ✅ use correct field from auth middleware
 
-    if (!doctor?.available) {
-      return res.json({ success: false, message: "Doctor not available" });
+    // Check doctor exists
+    const doctor = await doctorModel.findById(docId);
+    if (!doctor) {
+      return res.status(404).json({ success: false, message: "Doctor not found" });
     }
 
+    // Check if slot already booked
+    const existing = await appointmentModel.findOne({ docId, slotDate, slotTime });
+    if (existing) {
+      return res.status(400).json({ success: false, message: "Slot already booked" });
+    }
+
+    // Create appointment
     const appointment = await appointmentModel.create({
-      userId: req.user.id,
+      userId,
       docId,
       slotDate,
       slotTime,
       status: "Pending",
     });
 
-    res.json({ success: true, message: "Appointment booked", data: appointment });
+    res.json({
+      success: true,
+      message: "Appointment booked",
+      data: appointment,
+    });
   } catch (err) {
-    console.error("Book appointment error:", err);
+    console.error("❌ Book appointment error:", err);
     res.status(500).json({ success: false, message: "Server error" });
   }
 };
 
+// Get user's appointments
 export const getUserAppointments = async (req, res) => {
   try {
+    const userId = req.userId; // ✅ correct field
     const appointments = await appointmentModel
-      .find({ userId: req.user.id })
-      .populate("docId", "name specialization");
+      .find({ userId })
+      .populate("docId", "name speciality image"); // ✅ populate useful fields
 
     res.json({ success: true, data: appointments });
   } catch (err) {
-    console.error("Get appointments error:", err);
+    console.error("❌ Get appointments error:", err);
     res.status(500).json({ success: false, message: "Server error" });
   }
 };
 
+
+// Cancel appointment
 export const cancelAppointment = async (req, res) => {
   try {
     const { appointmentId } = req.body;
     if (!appointmentId) {
-      return res.status(400).json({ success: false, message: "Appointment ID is required" });
+      return res
+        .status(400)
+        .json({ success: false, message: "Appointment ID is required" });
     }
 
+    // Find and cancel appointment
     const updated = await appointmentModel.findOneAndUpdate(
       { _id: appointmentId, userId: req.user.id },
       { status: "Cancelled" },
@@ -199,10 +240,24 @@ export const cancelAppointment = async (req, res) => {
     );
 
     if (!updated) {
-      return res.status(404).json({ success: false, message: "Appointment not found or unauthorized" });
+      return res.status(404).json({
+        success: false,
+        message: "Appointment not found or unauthorized",
+      });
     }
 
-    res.json({ success: true, message: "Appointment cancelled", data: updated });
+    // Optional: Restore doctor availability if needed
+    const doctor = await doctorModel.findById(updated.docId);
+    if (doctor) {
+      doctor.available = true;
+      await doctor.save();
+    }
+
+    res.json({
+      success: true,
+      message: "Appointment cancelled",
+      data: updated,
+    });
   } catch (err) {
     console.error("Cancel appointment error:", err);
     res.status(500).json({ success: false, message: "Server error" });

@@ -72,6 +72,10 @@ const Appointment = () => {
 
       if (data.success) {
         toast.success(data.message);
+
+        // Immediately mark doctor unavailable on frontend
+        setDocInfo((prev) => ({ ...prev, available: false }));
+
         navigate("/my-appointments");
       } else {
         toast.error(data.message);
@@ -97,7 +101,11 @@ const Appointment = () => {
                 <h2 className="text-2xl font-semibold text-gray-900">
                   {docInfo.name}
                 </h2>
-                <CheckCircle className="w-5 h-5 text-green-500" />
+                <CheckCircle
+                  className={`w-5 h-5 ${
+                    docInfo.available ? "text-green-500" : "text-red-500"
+                  }`}
+                />
               </div>
               <p className="text-lg text-indigo-600 font-medium mt-1">
                 {docInfo.speciality}
@@ -111,10 +119,16 @@ const Appointment = () => {
               </div>
               <div className="mt-4 flex gap-3 flex-wrap">
                 <span className="px-3 py-1 bg-blue-50 text-blue-600 rounded-lg text-sm">
-                  ₹500 Consultation Fee
+                  ₹{docInfo.fees} Consultation Fee
                 </span>
-                <span className="px-3 py-1 bg-green-50 text-green-600 rounded-lg text-sm">
-                  Available Today
+                <span
+                  className={`px-3 py-1 rounded-lg text-sm ${
+                    docInfo.available
+                      ? "bg-green-50 text-green-600"
+                      : "bg-red-50 text-red-600"
+                  }`}
+                >
+                  {docInfo.available ? "Available Today" : "Unavailable"}
                 </span>
               </div>
             </div>
@@ -161,14 +175,22 @@ const Appointment = () => {
           {/* Book Button */}
           <button
             onClick={bookAppointment}
-            className="mt-8 w-full py-3 bg-indigo-600 hover:bg-indigo-700 text-white font-medium rounded-2xl shadow-lg transition-all"
+            disabled={!docInfo.available}
+            className={`mt-8 w-full py-3 text-white font-medium rounded-2xl shadow-lg transition-all ${
+              docInfo.available
+                ? "bg-indigo-600 hover:bg-indigo-700"
+                : "bg-gray-400 cursor-not-allowed"
+            }`}
           >
-            Book Appointment
+            {docInfo.available ? "Book Appointment" : "Unavailable"}
           </button>
 
           {/* Related doctors */}
           <div className="mt-10">
-            <RelatedDoctors docId={docInfo._id} speciality={docInfo.speciality} />
+            <RelatedDoctors
+              docId={docInfo._id}
+              speciality={docInfo.speciality}
+            />
           </div>
         </div>
       </div>
