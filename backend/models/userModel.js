@@ -5,7 +5,7 @@ const userSchema = new mongoose.Schema(
   {
     name: { type: String, required: true, trim: true },
     email: { type: String, required: true, unique: true, lowercase: true },
-    password: { type: String, required: true },
+    password: { type: String, required: true, minlength: 6 },
     image: {
       type: String,
       default:
@@ -15,14 +15,17 @@ const userSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
+// Hash password before saving
 userSchema.pre("save", async function (next) {
   if (!this.isModified("password")) return next();
   this.password = await bcrypt.hash(this.password, 10);
   next();
 });
 
-userSchema.methods.matchPassword = async function (entered) {
-  return bcrypt.compare(entered, this.password);
+// Compare entered password with hashed password
+userSchema.methods.matchPassword = async function (enteredPassword) {
+  return bcrypt.compare(enteredPassword, this.password);
 };
 
-export default mongoose.model("User", userSchema);
+const User = mongoose.model("User", userSchema);
+export default User;

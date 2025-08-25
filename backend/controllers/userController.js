@@ -1,6 +1,5 @@
 // controllers/authUser.js
-import jwt from "jsonwebtoken";
-import bcrypt from "bcryptjs";
+import jwt from "jsonwebtoken";;
 import dotenv from "dotenv";
 import Razorpay from "razorpay";
 import Stripe from "stripe";
@@ -9,103 +8,84 @@ import path from "path";
 import fs from "fs";
 import crypto from "crypto";
 
-import userModel from "../models/userModel.js";
+import User from "../models/userModel.js";
 import doctorModel from "../models/doctorModel.js";
 import appointmentModel from "../models/appointmentModel.js";
 
 dotenv.config();
 
 // ================== Helpers ==================
-const generateToken = (id) =>
-  jwt.sign({ id }, process.env.JWT_SECRET, { expiresIn: "30d" });
 
-// ================== Auth Controllers ==================
+const signToken = (userId) =>
+  jwt.sign({ id: userId }, process.env.JWT_SECRET, { expiresIn: "7d" });
+
+// @desc Register user
+// @route POST /api/user/register
 export const registerUser = async (req, res) => {
   try {
     const { name, email, password } = req.body;
 
     if (!name || !email || !password) {
-      return res
-        .status(400)
-        .json({ success: false, message: "All fields are required" });
+      return res.status(400).json({ success: false, message: "All fields are required" });
     }
 
-    // Check if user exists
-    const exists = await userModel.findOne({ email });
-    if (exists) {
-      return res
-        .status(400)
-        .json({ success: false, message: "User already exists" });
+    const existing = await User.findOne({ email });
+    if (existing) {
+      return res.status(409).json({ success: false, message: "Email already registered" });
     }
 
-    // Hash password & create user
-    const hashedPassword = await bcrypt.hash(password, 10);
-    const user = await userModel.create({
-      name,
-      email,
-      password: hashedPassword,
-    });
+    const user = await User.create({ name, email, password });
 
-    res.json({
+    const token = signToken(user._id);
+
+    res.status(201).json({
       success: true,
-      message: "User registered",
-      token: generateToken(user._id),
-      user,
+      token,
+      user: { _id: user._id, name: user.name, email: user.email, image: user.image },
     });
   } catch (err) {
-    console.error("Register error:", err);
+    console.error("❌ Register error:", err);
     res.status(500).json({ success: false, message: "Server error" });
   }
 };
 
+// @desc Login user
+// @route POST /api/user/login
 export const loginUser = async (req, res) => {
   try {
     const { email, password } = req.body;
 
-    if (!email || !password) {
-      return res
-        .status(400)
-        .json({ success: false, message: "Email & password required" });
+    const user = await User.findOne({ email });
+    if (!user || !(await user.matchPassword(password))) {
+      return res.status(401).json({ success: false, message: "Invalid credentials" });
     }
 
-    // Validate user
-    const user = await userModel.findOne({ email });
-    if (!user)
-      return res
-        .status(400)
-        .json({ success: false, message: "Invalid credentials" });
-
-    // Compare password
-    const isMatch = await bcrypt.compare(password, user.password);
-    if (!isMatch)
-      return res
-        .status(400)
-        .json({ success: false, message: "Invalid credentials" });
+    const token = signToken(user._id);
 
     res.json({
       success: true,
-      message: "Login successful",
-      token: generateToken(user._id),
-      user,
+      token,
+      user: { _id: user._id, name: user.name, email: user.email, image: user.image },
     });
   } catch (err) {
-    console.error("Login error:", err);
+    console.error("❌ Login error:", err);
     res.status(500).json({ success: false, message: "Server error" });
   }
 };
 
+// @desc Get user profile
+// @route GET /api/user/profile
+// @access Private
 export const getProfile = async (req, res) => {
   try {
-    if (!req.user) {
-      return res.status(401).json({ success: false, message: "Unauthorized" });
+    const user = await User.findById(req.userId).select("-password");
+    if (!user) {
+      return res.status(404).json({ success: false, message: "User not found" });
     }
-    const user = await userModel.findById(req.user.id).select("-password");
     res.json({ success: true, user });
   } catch (err) {
-    console.error("Profile error:", err.message);
-    res
-      .status(500)
-      .json({ success: false, message: "Server error fetching profile" });
+    console.error("❌ Profile error:", err);
+    res.status(500).json({ success: false, message: "Server error" });
   }
 };
 

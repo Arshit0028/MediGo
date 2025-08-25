@@ -18,7 +18,9 @@ const AppContextProvider = ({ children }) => {
     return storedUser ? JSON.parse(storedUser) : null;
   });
 
+  // -----------------------------
   // Persist userData to localStorage whenever it updates
+  // -----------------------------
   useEffect(() => {
     if (userData) {
       localStorage.setItem("userData", JSON.stringify(userData));
@@ -49,6 +51,7 @@ const AppContextProvider = ({ children }) => {
   // -----------------------------
   const getProfile = async (authToken) => {
     if (!authToken) return setUserData(null);
+
     try {
       const { data } = await axios.get(`${backendUrl}/api/user/profile`, {
         headers: { Authorization: `Bearer ${authToken}` },
@@ -70,13 +73,14 @@ const AppContextProvider = ({ children }) => {
   };
 
   // -----------------------------
-  // Handle Auth (Login/Register)
+  // Handle Auth (store token + fetch profile)
   // -----------------------------
   const handleAuth = (userToken) => {
     if (!userToken) return console.error("❌ No token provided");
+
     setToken(userToken);
     localStorage.setItem("token", userToken);
-    getProfile(userToken);
+    getProfile(userToken); // ✅ fetch user right after login/register
   };
 
   // -----------------------------
@@ -86,6 +90,7 @@ const AppContextProvider = ({ children }) => {
     setToken("");
     setUserData(null);
     localStorage.removeItem("token");
+    localStorage.removeItem("userData");
     toast.success("Logged out successfully");
     navigate("/login");
   };
@@ -96,6 +101,7 @@ const AppContextProvider = ({ children }) => {
   const registerUser = async (formData) => {
     try {
       const { data } = await axios.post(`${backendUrl}/api/user/register`, formData);
+
       if (data.success && data.token) {
         handleAuth(data.token);
         toast.success("Account created successfully");
@@ -115,6 +121,7 @@ const AppContextProvider = ({ children }) => {
   const loginUser = async (formData) => {
     try {
       const { data } = await axios.post(`${backendUrl}/api/user/login`, formData);
+
       if (data.success && data.token) {
         handleAuth(data.token);
         toast.success("Logged in successfully");
@@ -133,7 +140,9 @@ const AppContextProvider = ({ children }) => {
   // -----------------------------
   useEffect(() => {
     getDoctorsData();
-    if (token) getProfile(token);
+    if (token) {
+      getProfile(token);
+    }
   }, [token]);
 
   return (

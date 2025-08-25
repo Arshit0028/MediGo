@@ -2,9 +2,9 @@ import express from "express";
 import dotenv from "dotenv";
 import mongoose from "mongoose";
 import cors from "cors";
-import userRoutes from "./routes/userRoute.js"; // ✅ fixed filename
-import doctorRoutes from "./routes/doctorRoute.js"; // ✅ fixed filename
-import paymentRoutes from "./routes/userRoute.js"; // ✅ fixed filename
+import userRoutes from "./routes/userRoute.js";
+import doctorRoutes from "./routes/doctorRoute.js";
+// import paymentRoutes from "./routes/paymentRoute.js"; // ❌ don't reuse userRoute.js
 
 dotenv.config();
 const app = express();
@@ -16,7 +16,7 @@ app.use(express.json());
 // routes
 app.use("/api/user", userRoutes);
 app.use("/api/doctor", doctorRoutes);
-app.use("/api/payment", paymentRoutes);
+// app.use("/api/payment", paymentRoutes); // enable only when ready
 
 // test route
 app.get("/", (req, res) => {
