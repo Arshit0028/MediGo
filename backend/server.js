@@ -4,7 +4,7 @@ import mongoose from "mongoose";
 import cors from "cors";
 import userRoutes from "./routes/userRoute.js";
 import doctorRoutes from "./routes/doctorRoute.js";
-// import paymentRoutes from "./routes/paymentRoute.js"; // ❌ don't reuse userRoute.js
+import paymentRoutes from "./routes/paymentRoutes.js"; 
 
 dotenv.config();
 const app = express();
@@ -16,7 +16,7 @@ app.use(express.json());
 // routes
 app.use("/api/user", userRoutes);
 app.use("/api/doctor", doctorRoutes);
-// app.use("/api/payment", paymentRoutes); // enable only when ready
+app.use("/api/payment", paymentRoutes);
 
 // test route
 app.get("/", (req, res) => {

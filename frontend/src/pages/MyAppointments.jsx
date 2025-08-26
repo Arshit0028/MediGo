@@ -17,15 +17,21 @@ const MyAppointments = () => {
         return;
       }
 
-      const res = await axios.get("http://localhost:5000/api/user/appointments", {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
+      const res = await axios.get(
+        "http://localhost:5000/api/user/appointments",
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
 
       setAppointments(res.data.data || []);
     } catch (err) {
-      console.error("❌ Fetch appointments error:", err.response?.data || err.message);
+      console.error(
+        "❌ Fetch appointments error:",
+        err.response?.data || err.message
+      );
       if (err.response?.status === 401) {
         localStorage.removeItem("token");
         navigate("/login");
@@ -55,42 +61,38 @@ const MyAppointments = () => {
         alert("Payment initiation failed");
         return;
       }
+const { order } = data;
+console.log("Order from backend:", order);
 
-      const { order } = data;
-
-      // 2. Open Razorpay checkout
-      const options = {
-        key: import.meta.env.VITE_RAZORPAY_KEY_ID, // add in .env
-        amount: order.amount,
-        currency: "INR",
-        name: "MediGo - Appointment Payment",
-        description: "Doctor Appointment Payment",
-        order_id: order.id,
-        handler: async function (response) {
-          try {
-            // 3. Verify payment on backend
-            await axios.post(
-              "http://localhost:5000/api/payment/verify",
-              {
-                razorpay_payment_id: response.razorpay_payment_id,
-                razorpay_order_id: response.razorpay_order_id,
-                razorpay_signature: response.razorpay_signature,
-                appointmentId: apptId,
-              },
-              { headers: { Authorization: `Bearer ${token}` } }
-            );
-
-            alert("✅ Payment Successful!");
-            getUserAppointments(); // refresh appointments
-          } catch (error) {
-            console.error("Payment verification failed:", error);
-            alert("❌ Payment verification failed");
-          }
+const options = {
+  key: import.meta.env.VITE_RAZORPAY_KEY_ID,
+  amount: order.amount,
+  currency: order.currency,
+  name: "MediGo - Appointment Payment",
+  description: "Doctor Appointment Payment",
+  order_id: order.id,   // ✅ Now available
+  handler: async function (response) {
+    try {
+      await axios.post(
+        "http://localhost:5000/api/payment/verify",
+        {
+          razorpay_payment_id: response.razorpay_payment_id,
+          razorpay_order_id: response.razorpay_order_id,
+          razorpay_signature: response.razorpay_signature,
+          appointmentId: apptId,
         },
-        theme: {
-          color: "#1D4ED8",
-        },
-      };
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+
+      alert("✅ Payment Successful!");
+      getUserAppointments();
+    } catch (error) {
+      console.error("Payment verification failed:", error);
+      alert("❌ Payment verification failed");
+    }
+  },
+  theme: { color: "#1D4ED8" },
+};
 
       const rzp = new window.Razorpay(options);
       rzp.open();
@@ -105,7 +107,8 @@ const MyAppointments = () => {
     getUserAppointments();
   }, [location.pathname]);
 
-  if (loading) return <p className="text-center py-6">Loading appointments...</p>;
+  if (loading)
+    return <p className="text-center py-6">Loading appointments...</p>;
 
   return (
     <div className="max-w-4xl mx-auto mt-10 p-6 bg-white shadow-lg rounded-xl">
