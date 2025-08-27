@@ -18,7 +18,7 @@ const MyAppointments = () => {
       }
 
       const res = await axios.get(
-        "http://localhost:5000/api/user/appointments",
+        "https://medigo-xwpc.onrender.com/api/user/appointments",
         {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -52,7 +52,7 @@ const MyAppointments = () => {
 
       // 1. Create Razorpay order from backend
       const { data } = await axios.post(
-        "http://localhost:5000/api/payment/razorpay",
+        "https://medigo-xwpc.onrender.com/api/payment/razorpay",
         { amount },
         { headers: { Authorization: `Bearer ${token}` } }
       );
@@ -74,7 +74,7 @@ const options = {
   handler: async function (response) {
     try {
       await axios.post(
-        "http://localhost:5000/api/payment/verify",
+        "https://medigo-xwpc.onrender.com/api/payment/verify",
         {
           razorpay_payment_id: response.razorpay_payment_id,
           razorpay_order_id: response.razorpay_order_id,
