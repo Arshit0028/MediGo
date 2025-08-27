@@ -13,20 +13,12 @@ const MyAppointments = () => {
   const getUserAppointments = async () => {
     try {
       const token = localStorage.getItem("token");
-      if (!token) {
-        navigate("/login");
-        return;
-      }
+      if (!token) return navigate("/login");
 
       const res = await axios.get(
         "https://medigo-xwpc.onrender.com/api/user/appointments",
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
+        { headers: { Authorization: `Bearer ${token}` } }
       );
-
       setAppointments(res.data.data || []);
     } catch (err) {
       console.error("❌ Fetch appointments error:", err.response?.data || err.message);
@@ -39,30 +31,20 @@ const MyAppointments = () => {
     }
   };
 
-  // ✅ Razorpay Payment
   const handlePayment = async (amount, apptId) => {
     try {
       const token = localStorage.getItem("token");
-      if (!token) {
-        navigate("/login");
-        return;
-      }
+      if (!token) return navigate("/login");
 
-      // 1. Create Razorpay order from backend
       const { data } = await axios.post(
         "https://medigo-xwpc.onrender.com/api/payment/razorpay",
         { amount },
         { headers: { Authorization: `Bearer ${token}` } }
       );
 
-      if (!data.success) {
-        alert("Payment initiation failed");
-        return;
-      }
+      if (!data.success) return alert("Payment initiation failed");
 
       const { order } = data;
-      console.log("Order from backend:", order);
-
       const options = {
         key: import.meta.env.VITE_RAZORPAY_KEY_ID,
         amount: order.amount,
@@ -70,7 +52,7 @@ const MyAppointments = () => {
         name: "MediGo - Appointment Payment",
         description: "Doctor Appointment Payment",
         order_id: order.id,
-        handler: async function (response) {
+        handler: async (response) => {
           try {
             await axios.post(
               "https://medigo-xwpc.onrender.com/api/payment/verify",
@@ -82,7 +64,6 @@ const MyAppointments = () => {
               },
               { headers: { Authorization: `Bearer ${token}` } }
             );
-
             alert("✅ Payment Successful!");
             getUserAppointments();
           } catch (error) {
@@ -92,12 +73,30 @@ const MyAppointments = () => {
         },
         theme: { color: "#1D4ED8" },
       };
-
-      const rzp = new window.Razorpay(options);
-      rzp.open();
+      new window.Razorpay(options).open();
     } catch (err) {
       console.error("Payment error:", err);
       alert("Payment failed");
+    }
+  };
+
+  const handleCancel = async (apptId) => {
+    if (!window.confirm("Are you sure you want to cancel this appointment?")) return;
+    try {
+      const token = localStorage.getItem("token");
+      const { data } = await axios.post(
+        "https://medigo-xwpc.onrender.com/api/user/cancel-appointment",
+        { appointmentId: apptId },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+
+      if (data.success) {
+        alert("✅ Appointment cancelled successfully!");
+        getUserAppointments();
+      } else alert("❌ Could not cancel appointment");
+    } catch (err) {
+      console.error("Cancel appointment error:", err);
+      alert("❌ Cancellation failed");
     }
   };
 
@@ -118,12 +117,12 @@ const MyAppointments = () => {
     );
 
   return (
-    <div className="max-w-5xl mx-auto mt-10 px-4">
+    <div className="max-w-6xl mx-auto mt-10 px-4">
       <motion.h2
         initial={{ y: -20, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
         transition={{ duration: 0.6 }}
-        className="text-3xl font-bold mb-8 text-center text-blue-700"
+        className="text-4xl font-bold mb-10 text-center text-blue-700"
       >
         My Appointments
       </motion.h2>
@@ -132,64 +131,69 @@ const MyAppointments = () => {
         <motion.p
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
-          className="text-gray-500 text-center"
+          className="text-gray-500 text-center text-lg"
         >
-          No appointments found.
+          You have no upcoming appointments.
         </motion.p>
       ) : (
-        <div className="space-y-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {appointments.map((appt, index) => (
             <motion.div
               key={appt._id}
               initial={{ opacity: 0, y: 50 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
-              transition={{ duration: 0.6, delay: index * 0.15 }}
-              className="p-6 bg-white border rounded-2xl shadow-lg hover:shadow-xl transition"
+              transition={{ duration: 0.6, delay: index * 0.1 }}
+              className="bg-white rounded-3xl p-6 shadow-md hover:shadow-xl transition cursor-pointer flex flex-col justify-between"
             >
-              <div className="flex justify-between items-center">
-                <div>
-                  <p className="font-semibold text-lg text-gray-800">
-                    {appt.docId?.name || "Unknown"}{" "}
-                    <span className="text-sm text-gray-500">
-                      ({appt.docId?.speciality})
-                    </span>
-                  </p>
-                  <p className="text-gray-600 mt-1">
-                    Date:{" "}
-                    <span className="font-medium">
-                      {new Date(appt.slotDate).toLocaleDateString()}
-                    </span>
-                  </p>
-                  <p className="text-gray-600">
-                    Time: <span className="font-medium">{appt.slotTime}</span>
-                  </p>
-                </div>
+              <div className="flex flex-col gap-2">
+                <p className="font-semibold text-lg text-gray-800">
+                  {appt.docId?.name || "Unknown"}{" "}
+                  <span className="text-sm text-gray-500">
+                    ({appt.docId?.speciality})
+                  </span>
+                </p>
+                <p className="text-gray-600">
+                  <span className="font-medium">Date:</span>{" "}
+                  {new Date(appt.slotDate).toLocaleDateString()}
+                </p>
+                <p className="text-gray-600">
+                  <span className="font-medium">Time:</span> {appt.slotTime}
+                </p>
+              </div>
 
-                <div className="text-right">
-                  <p className="mb-2">
-                    <span
-                      className={`px-3 py-1 rounded-full text-sm font-medium text-white ${
-                        appt.status === "Pending"
-                          ? "bg-yellow-500"
-                          : appt.status === "Confirmed"
-                          ? "bg-green-600"
-                          : "bg-gray-500"
-                      }`}
-                    >
-                      {appt.status}
-                    </span>
-                  </p>
+              <div className="mt-4 flex flex-wrap justify-between items-center gap-2">
+                <span
+                  className={`px-3 py-1 rounded-full text-sm font-medium text-white ${
+                    appt.status === "Pending"
+                      ? "bg-yellow-500"
+                      : appt.status === "Confirmed"
+                      ? "bg-green-600"
+                      : "bg-gray-500"
+                  }`}
+                >
+                  {appt.status}
+                </span>
 
-                  {/* ✅ Pay Now Button */}
+                <div className="flex flex-wrap gap-2">
                   {appt.status === "Pending" && (
                     <motion.button
                       whileHover={{ scale: 1.05 }}
                       whileTap={{ scale: 0.95 }}
                       onClick={() => handlePayment(500, appt._id)}
-                      className="px-5 py-2 bg-blue-600 text-white rounded-lg shadow-md hover:bg-blue-700 transition"
+                      className="px-4 py-2 bg-blue-600 text-white rounded-xl shadow hover:bg-blue-700 transition"
                     >
                       Pay Now
+                    </motion.button>
+                  )}
+                  {(appt.status === "Pending" || appt.status === "Confirmed") && (
+                    <motion.button
+                      whileHover={{ scale: 1.05 }}
+                      whileTap={{ scale: 0.95 }}
+                      onClick={() => handleCancel(appt._id)}
+                      className="px-4 py-2 bg-red-500 text-white rounded-xl shadow hover:bg-red-600 transition"
+                    >
+                      Cancel
                     </motion.button>
                   )}
                 </div>

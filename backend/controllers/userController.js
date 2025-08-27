@@ -224,46 +224,59 @@ export const getUserAppointments = async (req, res) => {
   }
 };
 
-
-// Cancel appointment
+// Cancel an appointment
 export const cancelAppointment = async (req, res) => {
   try {
     const { appointmentId } = req.body;
+
+    // ✅ Validate input
     if (!appointmentId) {
       return res
         .status(400)
         .json({ success: false, message: "Appointment ID is required" });
     }
 
-    // Find and cancel appointment
-    const updated = await appointmentModel.findOneAndUpdate(
-      { _id: appointmentId, userId: req.user.id },
-      { status: "Cancelled" },
-      { new: true }
-    );
-
-    if (!updated) {
-      return res.status(404).json({
-        success: false,
-        message: "Appointment not found or unauthorized",
-      });
+    // ✅ Ensure req.userId exists (from auth middleware)
+    if (!req.userId) {
+      return res
+        .status(401)
+        .json({ success: false, message: "Unauthorized: user not logged in" });
     }
 
-    // Optional: Restore doctor availability if needed
-    const doctor = await doctorModel.findById(updated.docId);
-    if (doctor) {
-      doctor.available = true;
-      await doctor.save();
+    console.log("Attempting to cancel appointment:", appointmentId, "for user:", req.userId);
+
+    // ✅ Find appointment and check ownership
+    const appointment = await appointmentModel.findById(appointmentId);
+    if (!appointment) {
+      return res
+        .status(404)
+        .json({ success: false, message: "Appointment not found" });
     }
 
-    res.json({
+    if (appointment.userId.toString() !== req.userId.toString()) {
+      return res
+        .status(403)
+        .json({ success: false, message: "You are not authorized to cancel this appointment" });
+    }
+
+    if (appointment.status === "Cancelled") {
+      return res
+        .status(400)
+        .json({ success: false, message: "Appointment is already cancelled" });
+    }
+
+    // ✅ Update appointment status
+    appointment.status = "Cancelled";
+    await appointment.save();
+
+    return res.status(200).json({
       success: true,
-      message: "Appointment cancelled",
-      data: updated,
+      message: "Appointment cancelled successfully",
+      appointment,
     });
-  } catch (err) {
-    console.error("Cancel appointment error:", err);
-    res.status(500).json({ success: false, message: "Server error" });
+  } catch (error) {
+    console.error("Cancel appointment error:", error);
+    return res.status(500).json({ success: false, message: "Server error" });
   }
 };
 

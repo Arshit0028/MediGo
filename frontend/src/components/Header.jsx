@@ -30,10 +30,10 @@ const Header = () => {
 
           <div className="mt-8 flex flex-col sm:flex-row gap-4 justify-center md:justify-start">
             <button
-              onClick={() => handleNavigate("/login")}
+              onClick={() => handleNavigate("/Services")}
               className="px-8 py-3 bg-blue-600 text-white font-medium rounded-full shadow-lg hover:scale-105 hover:shadow-blue-300 hover:bg-blue-700 transition-all duration-300"
             >
-              Get Started
+              Our Services
             </button>
             <button
               onClick={() => handleNavigate("/doctors")}
