@@ -20,7 +20,7 @@ import PublicRoute from './components/PublicRoute'
 
 const App = () => {
   return (
-    <div className='mx-4 sm:mx-[10%]'>
+    <div>
       <ToastContainer />
       <Navbar />
 
@@ -36,6 +36,15 @@ const App = () => {
         />
 
         {/* Protected Routes */}
+
+          <Route
+            path="/"
+            element={
+              <PrivateRoute>
+                <Home />
+              </PrivateRoute>
+            }
+          />
         <Route
           path="/"
           element={
@@ -44,6 +53,7 @@ const App = () => {
             </PrivateRoute>
           }
         />
+
         <Route
           path="/doctors"
           element={
