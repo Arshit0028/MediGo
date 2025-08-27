@@ -9,7 +9,7 @@ export const AppContext = createContext();
 const AppContextProvider = ({ children }) => {
   const navigate = useNavigate();
   const currencySymbol = "₹";
-  const backendUrl = import.meta.env.VITE_BACKEND_URL || "http://localhost:5000";
+  const backendUrl = import.meta.env.VITE_BACKEND_URL || "https://medigo-xwpc.onrender.com";
 
   const [doctors, setDoctors] = useState([]);
   const [token, setToken] = useState(localStorage.getItem("token") || "");
