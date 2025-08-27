@@ -99,37 +99,48 @@ const storage = multer.diskStorage({
   filename: (req, file, cb) => cb(null, `${Date.now()}-${file.originalname}`),
 });
 export const uploadProfileImage = multer({ storage });
+
+// ================== Profile Update Controller ==================
 export const updateProfile = async (req, res) => {
   try {
-    const userId = req.userId; // ✅ use the correct property from middleware
-    const user = await userModel.findById(userId);
+    console.log("📩 Incoming profile update:", req.body);
 
-    if (!user)
+    // ✅ Check if middleware sets req.userId or req.user.id
+    const userId = req.userId || (req.user && req.user.id);
+    if (!userId) {
+      return res.status(401).json({ success: false, message: "Unauthorized: No userId found" });
+    }
+
+    const user = await userModel.findById(userId);
+    if (!user) {
       return res.status(404).json({ success: false, message: "User not found" });
+    }
 
     const { name, phone, address, gender, dob } = req.body;
 
     if (name) user.name = name;
     if (phone) user.phone = phone;
+
+    // ✅ Safe address parsing
     if (address) {
       try {
         user.address = typeof address === "string" ? JSON.parse(address) : address;
-      } catch {
-        user.address = address;
+      } catch (err) {
+        console.error("❌ Address parsing failed:", err.message);
+        user.address = address; // fallback
       }
     }
+
     if (gender) user.gender = gender;
     if (dob) user.dob = dob;
 
+    // ✅ Handle image update
     if (req.file) {
-      // delete old image if exists
       if (user.image) {
-        const oldImagePath = path.join(
-          process.cwd(),
-          "uploads/profile",
-          path.basename(user.image)
-        );
-        if (fs.existsSync(oldImagePath)) fs.unlinkSync(oldImagePath);
+        const oldImagePath = path.join(process.cwd(), user.image);
+        if (fs.existsSync(oldImagePath)) {
+          fs.unlinkSync(oldImagePath);
+        }
       }
       user.image = `/uploads/profile/${req.file.filename}`;
     }
@@ -143,10 +154,13 @@ export const updateProfile = async (req, res) => {
     });
   } catch (err) {
     console.error("❌ Update profile error:", err);
-    res.status(500).json({ success: false, message: "Server error updating profile" });
+    res.status(500).json({
+      success: false,
+      message: "Server error updating profile",
+      error: err.message,
+    });
   }
 };
-
 
 export const logoutUser = async (req, res) => {
   try {
