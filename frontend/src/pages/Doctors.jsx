@@ -11,7 +11,7 @@ const Doctors = () => {
  useEffect(() => {
   const fetchDoctors = async () => {
     try {
-      const { data } = await axios.get("http://medigo-xwpc.onrender.com/api/doctor");
+      const { data } = await axios.get("https://medigo-xwpc.onrender.com/api/doctor");
       if (data.success) {
         setDoctors(data.doctors); // <-- use data.doctors
       } else {
