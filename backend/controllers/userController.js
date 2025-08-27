@@ -99,12 +99,11 @@ const storage = multer.diskStorage({
   filename: (req, file, cb) => cb(null, `${Date.now()}-${file.originalname}`),
 });
 export const uploadProfileImage = multer({ storage });
-
-// ================== Profile Update Controller ==================
 export const updateProfile = async (req, res) => {
   try {
-    const userId = req.user.id;
+    const userId = req.userId; // ✅ use the correct property from middleware
     const user = await userModel.findById(userId);
+
     if (!user)
       return res.status(404).json({ success: false, message: "User not found" });
 
@@ -112,17 +111,27 @@ export const updateProfile = async (req, res) => {
 
     if (name) user.name = name;
     if (phone) user.phone = phone;
-    if (address) user.address = JSON.parse(address); // frontend sends JSON string
+    if (address) {
+      try {
+        user.address = typeof address === "string" ? JSON.parse(address) : address;
+      } catch {
+        user.address = address;
+      }
+    }
     if (gender) user.gender = gender;
     if (dob) user.dob = dob;
 
     if (req.file) {
       // delete old image if exists
       if (user.image) {
-        const oldImagePath = path.join(process.cwd(), user.image);
+        const oldImagePath = path.join(
+          process.cwd(),
+          "uploads/profile",
+          path.basename(user.image)
+        );
         if (fs.existsSync(oldImagePath)) fs.unlinkSync(oldImagePath);
       }
-      user.image = `/uploads/profile/${req.file.filename}`; // save relative path
+      user.image = `/uploads/profile/${req.file.filename}`;
     }
 
     await user.save();
@@ -133,12 +142,11 @@ export const updateProfile = async (req, res) => {
       user,
     });
   } catch (err) {
-    console.error("Update profile error:", err);
-    res
-      .status(500)
-      .json({ success: false, message: "Server error updating profile" });
+    console.error("❌ Update profile error:", err);
+    res.status(500).json({ success: false, message: "Server error updating profile" });
   }
 };
+
 
 export const logoutUser = async (req, res) => {
   try {
