@@ -12,6 +12,7 @@ import Appointment from './pages/Appointment'
 import MyAppointments from './pages/MyAppointments'
 import MyProfile from './pages/MyProfile'
 import Verify from './pages/Verify'
+import Services from './pages/Services' // ← Import Services page
 import { ToastContainer } from 'react-toastify'
 import 'react-toastify/dist/ReactToastify.css'
 
@@ -36,15 +37,6 @@ const App = () => {
         />
 
         {/* Protected Routes */}
-
-          <Route
-            path="/"
-            element={
-              <PrivateRoute>
-                <Home />
-              </PrivateRoute>
-            }
-          />
         <Route
           path="/"
           element={
@@ -53,7 +45,6 @@ const App = () => {
             </PrivateRoute>
           }
         />
-
         <Route
           path="/doctors"
           element={
@@ -115,6 +106,16 @@ const App = () => {
           element={
             <PrivateRoute>
               <Verify />
+            </PrivateRoute>
+          }
+        />
+
+        {/* Services Route */}
+        <Route
+          path="/services"
+          element={
+            <PrivateRoute>
+              <Services />
             </PrivateRoute>
           }
         />

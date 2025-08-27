@@ -21,7 +21,7 @@ const Navbar = () => {
 
         {/* Desktop Navigation */}
         <ul className="hidden md:flex items-center gap-8 text-gray-700 font-medium">
-          {["HOME", "ALL DOCTORS", "ABOUT", "CONTACT"].map((item, idx) => (
+          {["HOME", "ALL DOCTORS", "ABOUT", "CONTACT", "SERVICES"].map((item, idx) => (
             <NavLink
               key={idx}
               to={
@@ -29,6 +29,8 @@ const Navbar = () => {
                   ? "/"
                   : item === "ALL DOCTORS"
                   ? "/doctors"
+                  : item === "SERVICES"
+                  ? "/services"
                   : `/${item.toLowerCase()}`
               }
               className={({ isActive }) =>
@@ -38,7 +40,6 @@ const Navbar = () => {
               }
             >
               <span className="pb-1">{item}</span>
-              {/* underline animation */}
               <span className="absolute left-0 bottom-0 w-0 h-[2px] bg-blue-600 transition-all duration-300 group-hover:w-full"></span>
             </NavLink>
           ))}
@@ -117,7 +118,8 @@ const Navbar = () => {
             >
               ✕
             </button>
-            {["HOME", "ALL DOCTORS", "ABOUT", "CONTACT"].map((item, idx) => (
+
+            {["HOME", "ALL DOCTORS", "ABOUT", "CONTACT", "SERVICES"].map((item, idx) => (
               <NavLink
                 key={idx}
                 to={
@@ -125,6 +127,8 @@ const Navbar = () => {
                     ? "/"
                     : item === "ALL DOCTORS"
                     ? "/doctors"
+                    : item === "SERVICES"
+                    ? "/services"
                     : `/${item.toLowerCase()}`
                 }
                 onClick={() => setShowMenu(false)}
@@ -133,6 +137,7 @@ const Navbar = () => {
                 {item}
               </NavLink>
             ))}
+
             {!token && (
               <button
                 onClick={() => {
