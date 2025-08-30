@@ -1,91 +1,88 @@
-🏥 MediGo – Doctor Appointment Booking App
-📖 Introduction
+# 🏥 MediGo - Doctor Appointment Booking System
 
-MediGo is a modern doctor appointment booking system built to simplify the way patients connect with healthcare providers.
-With MediGo, users can create accounts, log in securely, browse available doctors, choose a date and time slot, book an appointment, and complete a demo payment via Razorpay.
-Once booked, patients can view, track, and manage their appointments through a personalized dashboard.
+MediGo is a modern, hassle-free platform for booking doctor appointments online.  
+It provides a **seamless bridge between patients and healthcare providers**, allowing users to book appointments, explore medical services, and make secure payments — all in one place.  
 
-The application is designed with a full-stack architecture, ensuring smooth performance, secure authentication, and an intuitive user interface.
-It combines a React.js frontend for a seamless experience and a Node.js + Express backend with MongoDB for reliable data management.
+The platform is designed with **scalability, security, and user-friendliness** in mind. MediGo ensures patients can access healthcare faster, while doctors can efficiently manage their appointments.
 
-⚙️ Backend (Node.js + Express + MongoDB)
+---
 
-The backend powers the core business logic, authentication, and data persistence.
+## 🚀 Features
 
-Key Features:
+- 🔒 **Secure Appointment Booking** with authentication & validation  
+- 👨‍⚕️ **Browse Doctors by Specialization** (Dentist, Cardiologist, Dermatologist, etc.)  
+- 💳 **Integrated Payments** powered by Razorpay  
+- 📅 **Appointment Management** – Pending / Confirmed / Cancelled  
+- 🏥 **Explore Medical Services** – X-Ray, MRI, CT Scan, Vaccination & more  
+- 📱 **Responsive Design** for mobile, tablet, and desktop  
+- 🌐 **RESTful API** backend with scalable architecture  
 
-Authentication:
+---
 
-JWT-based authentication system for secure login and registration.
+## 📸 Screenshots
 
-Models (Mongoose):
+### 🏠 Home Page  
+![Home Page](/frontend/public/medigo.png)
 
-User → Stores patient information and credentials.
+### 👩‍⚕️ Our Specialists  
+![Doctors](/frontend/public/doctors.png)
 
-Doctor → Stores doctor profiles and availability.
+### 📖 About Us  
+![About](/frontend/public/About.png)
 
-Appointment → Handles booking details (doctor, patient, date, time, payment).
+### 🏥 Services  
+![Services](/frontend/public/Services.png)
 
-Controllers:
+### 📅 My Appointments  
+![Appointments](/frontend/public/Payment.png)
 
-Business logic for authentication, appointment booking, cancellation, and payment verification.
+---
 
-Routes:
+## 🛠️ Tech Stack
 
-REST API endpoints for users, doctors, appointments, and payments.
+### Frontend
+- ![HTML5](https://img.shields.io/badge/HTML5-E34F26?style=for-the-badge&logo=html5&logoColor=white)
+- ![CSS3](https://img.shields.io/badge/CSS3-1572B6?style=for-the-badge&logo=css3&logoColor=white)
+- ![JavaScript](https://img.shields.io/badge/JavaScript-F7DF1E?style=for-the-badge&logo=javascript&logoColor=black)
+- ![React](https://img.shields.io/badge/React-20232A?style=for-the-badge&logo=react&logoColor=61DAFB)
+- ![TailwindCSS](https://img.shields.io/badge/TailwindCSS-38B2AC?style=for-the-badge&logo=tailwind-css&logoColor=white)
+- ![Redux](https://img.shields.io/badge/Redux-764ABC?style=for-the-badge&logo=redux&logoColor=white)
 
-Middleware:
+### Backend
+- ![Node.js](https://img.shields.io/badge/Node.js-43853D?style=for-the-badge&logo=node.js&logoColor=white)
+- ![Express](https://img.shields.io/badge/Express.js-404D59?style=for-the-badge)
 
-JWT token verification and request validation.
+### Database
+- ![MongoDB](https://img.shields.io/badge/MongoDB-4EA94B?style=for-the-badge&logo=mongodb&logoColor=white)
 
-Payment Gateway:
+### Authentication & Security
+- ![JWT](https://img.shields.io/badge/JWT-black?style=for-the-badge&logo=JSON%20web%20tokens)
+- 🔑 Bcrypt Password Hashing
 
-Razorpay integration with secure order creation and verification.
+### Payment Integration
+- 💳 Razorpay
 
-The backend ensures that all bookings, cancellations, and payments are validated, authorized, and stored safely in MongoDB.
+### Tools & Deployment
+- ![Git](https://img.shields.io/badge/Git-F05032?style=for-the-badge&logo=git&logoColor=white)
+- ![GitHub](https://img.shields.io/badge/GitHub-181717?style=for-the-badge&logo=github&logoColor=white)
+- ![VSCode](https://img.shields.io/badge/VSCode-007ACC?style=for-the-badge&logo=visual-studio-code&logoColor=white)
+- ☁️ Future Support: AWS / Vercel / Netlify  
 
-🎨 Frontend (React.js)
+---
 
-The frontend provides a clean and interactive user interface for patients.
+## 📌 About the Project
 
-Key Features:
+MediGo bridges the gap between patients and healthcare providers by delivering:  
 
-Pages:
+✅ A **modern, intuitive UI** with smooth navigation  
+✅ A **scalable backend** using Node.js, Express, and MongoDB  
+✅ **Real-time appointment management**  
+✅ **Secure online payments** for hassle-free booking  
 
-Login & Register → Secure user access.
+This project is ideal for **learning full-stack development**, covering **React frontend, Express backend, MongoDB database, and payment gateway integration**.  
 
-Doctor Details → View doctor profile and availability.
+---
 
-Book Appointment → Select date & time slot, proceed to payment.
+## ✨ Author
 
-My Appointments → View upcoming/past bookings, cancel appointments.
-
-Profile → Manage user profile information.
-
-Components:
-
-Reusable UI components (forms, appointment cards, doctor listings).
-
-Dynamic time slot picker for appointment scheduling.
-
-State Management:
-
-React Context API for global state handling (auth, user data, appointments).
-
-API Integration:
-
-Axios for communication with backend APIs.
-
-UI/UX Styling:
-
-TailwindCSS / custom CSS for responsive and modern design.
-
-The frontend ensures ease of navigation, smooth booking flow, and real-time updates for patients.
-
-🌐 Summary
-
-Backend handles authentication, appointment management, and Razorpay payments with secure API endpoints.
-
-Frontend provides a patient-friendly interface for booking, payments, and managing appointments.
-
-Together, MediGo delivers a complete doctor appointment booking experience from registration to payment.
+👨‍💻 Developed with ❤️ by **Arshit Dhiman**  
