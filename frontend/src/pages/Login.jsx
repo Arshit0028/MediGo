@@ -3,7 +3,12 @@ import { AppContext } from "../context/AppContext";
 
 const Login = () => {
   const [mode, setMode] = useState("signup"); // "signup" | "login"
-  const [formData, setFormData] = useState({ name: "", email: "", password: "" });
+  const [formData, setFormData] = useState({
+    name: "",
+    email: "",
+    password: "",
+  });
+  const [loading, setLoading] = useState(false);
 
   const { registerUser, loginUser } = useContext(AppContext);
 
@@ -13,20 +18,25 @@ const Login = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setLoading(true);
 
-    if (mode === "signup") {
-      const success = await registerUser({
-        name: formData.name,
-        email: formData.email,
-        password: formData.password,
-      });
-      if (success) window.location.href = "/"; // redirect only if success
-    } else {
-      const success = await loginUser({
-        email: formData.email,
-        password: formData.password,
-      });
-      if (success) window.location.href = "/";
+    try {
+      if (mode === "signup") {
+        const success = await registerUser({
+          name: formData.name,
+          email: formData.email,
+          password: formData.password,
+        });
+        if (success) window.location.href = "/";
+      } else {
+        const success = await loginUser({
+          email: formData.email,
+          password: formData.password,
+        });
+        if (success) window.location.href = "/";
+      }
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -45,7 +55,12 @@ const Login = () => {
         <form onSubmit={handleSubmit} className="mt-8 space-y-6">
           {mode === "signup" && (
             <div>
-              <label htmlFor="name" className="block text-sm font-light text-gray-600">Full Name</label>
+              <label
+                htmlFor="name"
+                className="block text-sm font-light text-gray-600"
+              >
+                Full Name
+              </label>
               <input
                 id="name"
                 name="name"
@@ -60,7 +75,12 @@ const Login = () => {
           )}
 
           <div>
-            <label htmlFor="email" className="block text-sm font-light text-gray-600">Email Address</label>
+            <label
+              htmlFor="email"
+              className="block text-sm font-light text-gray-600"
+            >
+              Email Address
+            </label>
             <input
               id="email"
               name="email"
@@ -74,7 +94,12 @@ const Login = () => {
           </div>
 
           <div>
-            <label htmlFor="password" className="block text-sm font-light text-gray-600">Password</label>
+            <label
+              htmlFor="password"
+              className="block text-sm font-light text-gray-600"
+            >
+              Password
+            </label>
             <input
               id="password"
               name="password"
@@ -89,14 +114,23 @@ const Login = () => {
 
           <button
             type="submit"
-            className="w-full py-3 px-4 rounded-lg text-white bg-teal-500 hover:bg-teal-600 transition-colors"
+            disabled={loading}
+            className="w-full py-3 px-4 rounded-lg text-white bg-teal-500 hover:bg-teal-600 transition-colors flex items-center justify-center"
           >
-            {mode === "signup" ? "Create Account" : "Login"}
+            {loading ? (
+              <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+            ) : mode === "signup" ? (
+              "Create Account"
+            ) : (
+              "Login"
+            )}
           </button>
         </form>
 
         <p className="mt-6 text-center text-sm text-gray-500">
-          {mode === "signup" ? "Already have an account?" : "Don't have an account?"}
+          {mode === "signup"
+            ? "Already have an account?"
+            : "Don't have an account?"}
           <button
             onClick={() => setMode(mode === "signup" ? "login" : "signup")}
             className="ml-2 text-teal-600 hover:text-teal-700 font-medium"

@@ -24,7 +24,7 @@ const Appointment = () => {
     else setDocInfo(null);
   }, [docId, doctors]);
 
-  // Generate next 7 days of slots
+  // Generate next 7 days of slots (10AM - 5PM hourly)
   const getAvailableSlots = () => {
     if (!docInfo) return;
     const slots = [];
@@ -34,8 +34,15 @@ const Appointment = () => {
       let currentDate = new Date(today);
       currentDate.setDate(today.getDate() + i);
 
+      // weekday name + date (e.g., Monday, Sep 12)
+      const dayName = currentDate.toLocaleDateString("en-US", {
+        weekday: "long",
+        month: "short",
+        day: "numeric",
+      });
+
       let daySlots = [];
-      for (let j = 10; j <= 12; j++) {
+      for (let j = 10; j <= 17; j++) {
         let currentDateCopy = new Date(currentDate);
         currentDateCopy.setHours(j);
         currentDateCopy.setMinutes(0);
@@ -48,7 +55,7 @@ const Appointment = () => {
 
         daySlots.push({ datetime: currentDateCopy, time: formattedTime });
       }
-      slots.push(daySlots);
+      slots.push({ dayName, daySlots });
     }
     setDocSlots(slots);
   };
@@ -65,7 +72,7 @@ const Appointment = () => {
         `${backendUrl}/api/user/book-appointment`,
         {
           docId: docInfo._id,
-          slotDate: docSlots[slotIndex][0].datetime,
+          slotDate: docSlots[slotIndex].daySlots[0].datetime,
           slotTime,
         },
         { headers: { Authorization: `Bearer ${token}` } }
@@ -122,7 +129,9 @@ const Appointment = () => {
                   }`}
                 />
               </div>
-              <p className="text-indigo-600 font-medium mt-1">{docInfo.speciality}</p>
+              <p className="text-indigo-600 font-medium mt-1">
+                {docInfo.speciality}
+              </p>
               <div className="flex items-center gap-4 mt-3 flex-wrap text-gray-500">
                 <span className="flex items-center text-yellow-500">
                   <Star className="w-4 h-4 mr-1" /> 4.8
@@ -170,13 +179,13 @@ const Appointment = () => {
                       : "bg-gray-100 text-gray-700 hover:bg-gray-200"
                   }`}
                 >
-                  Day {i + 1}
+                  {day.dayName}
                 </motion.button>
               ))}
             </div>
 
             <div className="mt-5 flex gap-3 flex-wrap">
-              {docSlots[slotIndex]?.map((slot, i) => (
+              {docSlots[slotIndex]?.daySlots.map((slot, i) => (
                 <motion.button
                   key={i}
                   onClick={() => setSlotTime(slot.time)}
